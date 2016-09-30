@@ -44,6 +44,6 @@ func main() {
 	http.HandleFunc("/", view)
 	http.HandleFunc("/attachment", download)
 
-  fmt.Println("Sstarting server on http://localhost:6245")
+	fmt.Println("Sstarting server on http://localhost:6245")
 	http.ListenAndServe("localhost:6245", nil)
 }
