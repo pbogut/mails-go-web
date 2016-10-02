@@ -16,6 +16,7 @@ import (
 var opts struct {
 	Verbose bool   `short:"v" long:"verbose" description:"Show verbose debug information"`
 	Resolv  string `short:"r" long:"query-resolve" description:"Command to resolve a query into file path"`
+  Port string `short:"p" long:"port" description:"Server port" default:"6245"`
 }
 
 func debug(message string, params ...interface{}) {
@@ -97,6 +98,6 @@ func main() {
 	http.HandleFunc("/", view)
 	http.HandleFunc("/attachment", download)
 
-	fmt.Println("Starting server on http://localhost:6245")
-	http.ListenAndServe("localhost:6245", nil)
+	fmt.Println("Starting server on http://localhost:" + opts.Port)
+	http.ListenAndServe("localhost:" + opts.Port, nil)
 }
