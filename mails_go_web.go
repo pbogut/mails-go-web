@@ -13,6 +13,17 @@ import (
 	"github.com/veqryn/go-email/email"
 )
 
+var opts struct {
+	Verbose bool   `short:"v" long:"verbose" description:"Show verbose debug information"`
+	Resolv  string `short:"r" long:"query-resolve" description:"Command to resolve a query into file path"`
+}
+
+func debug(message string, params ...interface{}) {
+	if opts.Verbose {
+		fmt.Printf(message+"\n", params...)
+	}
+}
+
 func query_to_file(q string) string {
 	var file_path string
 
@@ -28,11 +39,9 @@ func query_to_file(q string) string {
 		file_path = lines[0]
 	}
 
-	return file_path
-}
+	debug("Query \"%s\" resolved as \"%s\" file path.", q, file_path)
 
-func download(w http.ResponseWriter, r *http.Request) {
-	io.WriteString(w, "Not implemented yet...")
+	return file_path
 }
 
 func get_email_view(file_path string) string {
@@ -56,6 +65,11 @@ func get_email_view(file_path string) string {
 
 	return body
 }
+
+func download(w http.ResponseWriter, r *http.Request) {
+	io.WriteString(w, "Not implemented yet...")
+}
+
 func view(w http.ResponseWriter, r *http.Request) {
 	if len(r.URL.Query()["q"]) == 0 {
 		io.WriteString(w, "Query not provided.")
@@ -71,10 +85,6 @@ func view(w http.ResponseWriter, r *http.Request) {
 	body := get_email_view(file_path)
 	// render body
 	io.WriteString(w, body)
-}
-
-var opts struct {
-	Resolv string `short:"r" long:"query-resolve" description:"Command to resolve a query into file path"`
 }
 
 func main() {
