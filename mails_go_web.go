@@ -19,7 +19,7 @@ import (
 var opts struct {
 	Verbose bool   `short:"v" long:"verbose" description:"Show verbose debug information"`
 	Resolv  string `short:"r" long:"query-resolve" description:"Command to resolve a query into file path"`
-  Port string `short:"p" long:"port" description:"Server port" default:"6245"`
+	Port    string `short:"p" long:"port" description:"Server port" default:"6245"`
 }
 
 func debug(message string, params ...interface{}) {
@@ -217,7 +217,6 @@ func view(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-
 	_, err := flags.Parse(&opts)
 	if err != nil {
 		return
@@ -227,5 +226,5 @@ func main() {
 	http.HandleFunc("/attachment", download)
 
 	fmt.Println("Starting server on http://localhost:" + opts.Port)
-	http.ListenAndServe("localhost:" + opts.Port, nil)
+	http.ListenAndServe("localhost:"+opts.Port, nil)
 }
