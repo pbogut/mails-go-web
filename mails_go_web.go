@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"crypto/md5"
 	"fmt"
 	"html"
@@ -11,6 +12,9 @@ import (
 	"os/exec"
 	"regexp"
 	"strings"
+	"text/template"
+
+	"./preview"
 
 	"github.com/jessevdk/go-flags"
 	"github.com/veqryn/go-email/email"
@@ -75,119 +79,29 @@ func get_email_view(file_path string, url string) string {
 	reader := strings.NewReader(string(file))
 	msg, _ := email.ParseMessage(reader)
 
-	body := `<!doctype html>
-	<html>
-		<head>
-			<style>
-			body, html {
-				height: 100%%;
-				margin: 0;
-				padding: 0;
-				overflow: hidden;
-			}
-			.container {
-				margin: auto;
-				max-width: 800px;
-				height: 100%%;
-				border: 1px solid black;
-				box-sizing: border-box;
-			}
-			.header {
-				font-size: 14px;
-				height: 84px;
-				box-sizing: border-box;
-			}
-			.header img {
-				float: left;
-			}
-			.header table {
-				width: 100%%;
-			}
-			.header td.gravatar {
-				width: 80px;
-			}
-			.header td.field-name {
-				padding-right: 5px;
-				width: 70px;
-				font-weight: bold;
-				text-align: right;
-			}
-			.header td.bd-r {
-				border-right: 1px solid black;
-			}
-			.header td.bd-b {
-				border-bottom: 1px solid black;
-			}
-			iframe {
-				height: calc(100%% - 84px);
-				width: 100%%;
-			}
-			</style>
-		</head>
-		<body>
-			<div class="container">
-				<div class="header">
-				<table cellspacing="0" border="0">
-					<tr>
-						<td rowspan="4" class="bd-b bd-r gravatar">
-							<img src="http://www.gravatar.com/avatar/%x?s=80&d=identicon" alt="" />
-						</td>
-						<td class="field-name">
-							From:
-						</td>
-						<td class="bd-r">
-							%s
-						</td>
-					</tr>
-					<tr>
-						<td class="field-name">
-							To:
-						</td>
-						<td class="bd-r">
-							%s
-						</td>
-					</tr>
-					<tr>
-						<td class="field-name">
-							Date:
-						</td>
-						<td class="bd-r">
-							%s
-						</td>
-					</tr>
-					<tr>
-						<td class="field-name bd-b">
-							Subject:
-						</td>
-						<td class="bd-b bd-r">
-							%s
-						</td>
-					</tr>
-				</table>
-				</div>
-				<iframe frameborder="0" src="%s">
-				</iframe>
-			</div>
-		</body>
-	</html>
-	`
-
 	re := regexp.MustCompile("[^<]*<(.*)>")
 	from := strings.ToLower(re.ReplaceAllString(msg.Header.From(), "$1"))
 	data := []byte(from)
-	hash := md5.Sum(data)
+	hash := fmt.Sprintf("%x", md5.Sum(data))
 
 	date, _ := msg.Header.Date()
 
-	return fmt.Sprintf(
-		body,
-		hash,
-		html.EscapeString(msg.Header.From()),
-		msg.Header.To(),
-		date.Format("Mon, 2 Jan [2006-01-02 15:04:05]"),
-		html.EscapeString(msg.Header.Subject()),
-		url,
-	)
+	preview_html := preview.Template()
+
+	m := map[string]interface{}{
+		"EmailHash":  hash,
+		"From":       html.EscapeString(msg.Header.From()),
+		"To":         strings.Join(msg.Header.To(), ", "),
+		"Date":       date.Format("Mon, 2 Jan [2006-01-02 15:04:05]"),
+		"Subject":    html.EscapeString(msg.Header.Subject()),
+		"MessageUrl": url,
+	}
+
+	content := new(bytes.Buffer)
+	templ, _ := template.New("preview").Parse(preview_html)
+	templ.Execute(content, m)
+
+	return content.String()
 }
 
 func download(w http.ResponseWriter, r *http.Request) {
