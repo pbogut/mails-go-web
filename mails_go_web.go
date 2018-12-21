@@ -62,7 +62,9 @@ func get_email_body(file_path string) string {
 		switch mediaType {
 		case "text/html":
 			// by defaoult use html email
-			body = string(part.Body)
+			html := string(part.Body)
+			// open links in parent window
+			body = strings.Replace(html, "<head>", `<head><base target="_parent">`, 1)
 		case "text/plain":
 			// use plain body only if html not available
 			if body == "" {
