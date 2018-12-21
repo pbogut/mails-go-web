@@ -91,7 +91,7 @@ func get_email_view(file_path string, url string) string {
 	m := map[string]interface{}{
 		"EmailHash":  hash,
 		"From":       html.EscapeString(msg.Header.From()),
-		"To":         strings.Join(msg.Header.To(), ", "),
+		"To":         html.EscapeString(strings.Join(msg.Header.To(), ", ")),
 		"Date":       date.Format("Mon, 2 Jan [2006-01-02 15:04:05]"),
 		"Subject":    html.EscapeString(msg.Header.Subject()),
 		"MessageUrl": url,

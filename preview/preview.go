@@ -26,6 +26,7 @@ func Css() string {
 		}
 		.header table {
 			width: 100%;
+			height: 100%;
 		}
 		.header td.gravatar {
 			width: 80px;
@@ -43,7 +44,7 @@ func Css() string {
 			border-bottom: 1px solid black;
 		}
 		iframe {
-			height: calc(100% - 84px);
+			height: 100%;
 			width: 100%;
 		}
 	</style>
@@ -52,49 +53,55 @@ func Css() string {
 
 func Body() string {
 	return `
-	<div class="container">
-		<div class="header">
-		<table cellspacing="0" border="0">
-			<tr>
-				<td rowspan="4" class="bd-b bd-r gravatar">
-					<img src="http://www.gravatar.com/avatar/{{.EmailHash}}?s=80&d=identicon" alt="" />
-				</td>
-				<td class="field-name">
-					From:
-				</td>
-				<td>
-					{{.From}}
-				</td>
-			</tr>
-			<tr>
-				<td class="field-name">
-					To:
-				</td>
-				<td>
-					{{.To}}
-				</td>
-			</tr>
-			<tr>
-				<td class="field-name">
-					Date:
-				</td>
-				<td>
-					{{.Date}}
-				</td>
-			</tr>
-			<tr>
-				<td class="field-name bd-b">
-					Subject:
-				</td>
-				<td class="bd-b">
-					{{.Subject}}
-				</td>
-			</tr>
-		</table>
-		</div>
-		<iframe frameborder="0" src="{{.MessageUrl}}">
-		</iframe>
-	</div>`
+	<table class="container" cellspacing="0" border="0">
+		<tr>
+			<td class="header">
+				<table cellspacing="0" border="0">
+					<tr>
+						<td rowspan="4" class="bd-b bd-r gravatar">
+							<img src="http://www.gravatar.com/avatar/{{.EmailHash}}?s=80&d=identicon" alt="" />
+						</td>
+						<td class="field-name">
+							From:
+						</td>
+						<td>
+							{{.From}}
+						</td>
+					</tr>
+					<tr>
+						<td class="field-name">
+							To:
+						</td>
+						<td>
+							{{.To}}
+						</td>
+					</tr>
+					<tr>
+						<td class="field-name">
+							Date:
+						</td>
+						<td>
+							{{.Date}}
+						</td>
+					</tr>
+					<tr>
+						<td class="field-name bd-b">
+							Subject:
+						</td>
+						<td class="bd-b">
+							{{.Subject}}
+						</td>
+					</tr>
+				</table>
+			</td>
+		</tr>
+		<tr>
+			<td>
+				<iframe frameborder="0" src="{{.MessageUrl}}">
+				</iframe>
+			</td>
+		</tr>
+	</table>`
 }
 
 func Template() string {
