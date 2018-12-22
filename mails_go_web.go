@@ -8,6 +8,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"regexp"
@@ -54,9 +55,7 @@ func query_to_file(q string) string {
 
 func get_email_body(file_path string) string {
 	var body string
-	file, _ := ioutil.ReadFile(file_path)
-	reader := strings.NewReader(string(file))
-	msg, _ := email.ParseMessage(reader)
+	msg := email_file_to_msg(file_path)
 	for _, part := range msg.MessagesAll() {
 		mediaType, _, _ := part.Header.ContentType()
 		switch mediaType {
@@ -76,10 +75,8 @@ func get_email_body(file_path string) string {
 	return body
 }
 
-func get_email_view(file_path string, url string) string {
-	file, _ := ioutil.ReadFile(file_path)
-	reader := strings.NewReader(string(file))
-	msg, _ := email.ParseMessage(reader)
+func get_email_view(file_path string, query string) string {
+	msg := email_file_to_msg(file_path)
 
 	re := regexp.MustCompile("[^<]*<(.*)>")
 	from := strings.ToLower(re.ReplaceAllString(msg.Header.From(), "$1"))
@@ -90,13 +87,27 @@ func get_email_view(file_path string, url string) string {
 
 	preview_html := preview.Template()
 
+	var parts []map[string]string
+	for _, part := range msg.MessagesAll() {
+		partType, disposition, _ := part.Header.ContentDisposition()
+		if partType == "attachment" {
+			fileName := html.UnescapeString(attachment_name_decode(disposition["filename"]))
+			parts = append(parts, map[string]string{
+				"Url":  "/?file=" + url.QueryEscape(fileName) + "&" + query,
+				"Name": fileName,
+			})
+
+		}
+	}
+
 	m := map[string]interface{}{
-		"EmailHash":  hash,
-		"From":       html.EscapeString(msg.Header.From()),
-		"To":         html.EscapeString(strings.Join(msg.Header.To(), ", ")),
-		"Date":       date.Format("Mon, 2 Jan [2006-01-02 15:04:05]"),
-		"Subject":    html.EscapeString(msg.Header.Subject()),
-		"MessageUrl": url,
+		"EmailHash": hash,
+		"From":      html.EscapeString(msg.Header.From()),
+		"To":        html.EscapeString(strings.Join(msg.Header.To(), ", ")),
+		"Date":      date.Format("Mon, 2 Jan [2006-01-02 15:04:05]"),
+		"Subject":   html.EscapeString(msg.Header.Subject()),
+		"Query":     query,
+		"Parts":     parts,
 	}
 
 	content := new(bytes.Buffer)
@@ -106,8 +117,20 @@ func get_email_view(file_path string, url string) string {
 	return content.String()
 }
 
-func download(w http.ResponseWriter, r *http.Request) {
-	io.WriteString(w, "Not implemented yet...")
+func get_email_attachment(file_path string, attachment_name string) string {
+	msg := email_file_to_msg(file_path)
+
+	for _, part := range msg.MessagesAll() {
+		partType, disposition, _ := part.Header.ContentDisposition()
+		if partType == "attachment" {
+			fileName := html.UnescapeString(attachment_name_decode(disposition["filename"]))
+			if fileName == attachment_name {
+				return string(part.Body)
+			}
+		}
+	}
+
+	return file_path + attachment_name
 }
 
 func view(w http.ResponseWriter, r *http.Request) {
@@ -123,13 +146,39 @@ func view(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var body string
-	if len(r.URL.Query()["m"]) == 0 {
-		body = get_email_view(file_path, r.URL.Path+"?m=true&"+r.URL.RawQuery)
+
+	if len(r.URL.Query()["file"]) > 0 {
+		attachment_name, _ := url.QueryUnescape(r.URL.Query()["file"][0])
+		w.Header().Add("Content-Disposition", "attachment; filename=\""+attachment_name+"\"")
+		body = get_email_attachment(file_path, attachment_name)
+	} else if len(r.URL.Query()["m"]) == 0 {
+		body = get_email_view(file_path, r.URL.RawQuery)
 	} else {
 		body = get_email_body(file_path)
 	}
 	// render body
 	io.WriteString(w, body)
+}
+
+func email_file_to_msg(file_path string) *email.Message {
+	file, _ := ioutil.ReadFile(file_path)
+	reader := strings.NewReader(string(file))
+	msg, _ := email.ParseMessage(reader)
+
+	return msg
+}
+
+// this is lazy way to decode attachments,
+// it will break at some emails, I'm sure
+func attachment_name_decode(name string) string {
+	re := regexp.MustCompile("^=\\?[a-zA-Z0-9_\\-]*\\?.\\?(.*)\\?=")
+	newName := re.ReplaceAllString(name, "$1")
+	if newName != name {
+		re = regexp.MustCompile("=([A-F0-9][A-F0-9])")
+		newName = re.ReplaceAllString(newName, "%$1")
+		newName, _ = url.PathUnescape(newName)
+	}
+	return newName
 }
 
 func main() {
@@ -139,7 +188,6 @@ func main() {
 	}
 
 	http.HandleFunc("/", view)
-	http.HandleFunc("/attachment", download)
 
 	fmt.Println("Starting server on http://localhost:" + opts.Port)
 	http.ListenAndServe("localhost:"+opts.Port, nil)

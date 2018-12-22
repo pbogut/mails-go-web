@@ -11,10 +11,21 @@ func Css() string {
 		}
 		.container {
 			margin: auto;
-			max-width: 800px;
+			width: 800px;
 			height: 100%;
 			border: 1px solid black;
 			box-sizing: border-box;
+		}
+		.attachments {
+			height: 1px;
+			border-top: 1px solid black;
+		}
+		.attachments a {
+			display: inline-block;
+			font-size: 14px;
+			color: black;
+			text-decoration: none;
+			margin: 5px;
 		}
 		.header {
 			font-size: 14px;
@@ -97,10 +108,19 @@ func Body() string {
 		</tr>
 		<tr>
 			<td>
-				<iframe frameborder="0" src="{{.MessageUrl}}">
+				<iframe frameborder="0" src="/?m=1&{{.Query}}">
 				</iframe>
 			</td>
 		</tr>
+		{{if .Parts}}
+		<tr>
+			<td class="attachments">
+				{{range .Parts}}
+				<a href="{{.Url}}">[{{.Name}}]</a>
+				{{end}}
+			</td>
+		</tr>
+		{{end}}
 	</table>`
 }
 
