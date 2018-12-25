@@ -65,7 +65,7 @@ func get_email_body(file_path string, query string) string {
 			html := string(part.Body)
 			// open links in parent window
 			body = strings.Replace(html, "<head>", `<head><base target="_parent">`, 1)
-			body = re.ReplaceAllString(body, "<$1$2$3=\"/?file=$4&q=" + query + "\"$5>")
+			body = re.ReplaceAllString(body, "<$1$2$3=\"/?q=" + query + "&file=$4\"$5>")
 		case "text/plain":
 			// use plain body only if html not available
 			if body == "" {
@@ -95,7 +95,7 @@ func get_email_view(file_path string, query string) string {
 		if partType == "attachment" || partType == "inline" {
 			fileName := html.UnescapeString(attachment_name_decode(disposition["filename"]))
 			parts = append(parts, map[string]string{
-				"Url":  "/?file=" + url.QueryEscape(fileName) + "&q=" + query,
+				"Url":  "/?q=" + query + "&file=" + url.QueryEscape(fileName),
 				"Name": fileName,
 			})
 
