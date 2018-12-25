@@ -126,7 +126,8 @@ func get_email_attachment(file_path string, attachment_name string) string {
 		partType, disposition, _ := part.Header.ContentDisposition()
 		if partType == "attachment" || partType == "inline" {
 			fileName := html.UnescapeString(attachment_name_decode(disposition["filename"]))
-			if fileName == attachment_name {
+			attachmentId := part.Header.Get("X-Attachment-Id")
+			if fileName == attachment_name || attachmentId == attachment_name {
 				return string(part.Body)
 			}
 		}
