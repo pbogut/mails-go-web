@@ -155,9 +155,9 @@ func view(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Content-Disposition", "attachment; filename=\""+attachment_name+"\"")
 		body = get_email_attachment(file_path, attachment_name)
 	} else if len(r.URL.Query()["raw"]) == 0 {
-		body = get_email_view(file_path, r.URL.Query()["q"][0])
+		body = get_email_view(file_path, query)
 	} else {
-		body = get_email_body(file_path, r.URL.Query()["q"][0])
+		body = get_email_body(file_path, query)
 	}
 	// render body
 	io.WriteString(w, body)
