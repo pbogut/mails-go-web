@@ -108,7 +108,7 @@ func Body() string {
 		</tr>
 		<tr>
 			<td>
-				<iframe frameborder="0" src="/?m=1&{{.Query}}">
+				<iframe frameborder="0" src="/?raw=true&q={{.Query}}">
 				</iframe>
 			</td>
 		</tr>

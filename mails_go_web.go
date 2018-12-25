@@ -95,7 +95,7 @@ func get_email_view(file_path string, query string) string {
 		if partType == "attachment" || partType == "inline" {
 			fileName := html.UnescapeString(attachment_name_decode(disposition["filename"]))
 			parts = append(parts, map[string]string{
-				"Url":  "/?file=" + url.QueryEscape(fileName) + "&" + query,
+				"Url":  "/?file=" + url.QueryEscape(fileName) + "&q=" + query,
 				"Name": fileName,
 			})
 
@@ -153,8 +153,8 @@ func view(w http.ResponseWriter, r *http.Request) {
 		attachment_name, _ := url.QueryUnescape(r.URL.Query()["file"][0])
 		w.Header().Add("Content-Disposition", "attachment; filename=\""+attachment_name+"\"")
 		body = get_email_attachment(file_path, attachment_name)
-	} else if len(r.URL.Query()["m"]) == 0 {
-		body = get_email_view(file_path, r.URL.RawQuery)
+	} else if len(r.URL.Query()["raw"]) == 0 {
+		body = get_email_view(file_path, r.URL.Query()["q"][0])
 	} else {
 		body = get_email_body(file_path, r.URL.Query()["q"][0])
 	}
