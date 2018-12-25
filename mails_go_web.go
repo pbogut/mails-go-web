@@ -53,9 +53,10 @@ func query_to_file(q string) string {
 	return file_path
 }
 
-func get_email_body(file_path string) string {
+func get_email_body(file_path string, query string) string {
 	var body string
 	msg := email_file_to_msg(file_path)
+	re := regexp.MustCompile("<(img)([^>]*)(src)=\"cid:([^\"]*)\"([^>]*)>")
 	for _, part := range msg.MessagesAll() {
 		mediaType, _, _ := part.Header.ContentType()
 		switch mediaType {
@@ -64,6 +65,7 @@ func get_email_body(file_path string) string {
 			html := string(part.Body)
 			// open links in parent window
 			body = strings.Replace(html, "<head>", `<head><base target="_parent">`, 1)
+			body = re.ReplaceAllString(body, "<$1$2$3=\"/?file=$4&q=" + query + "\"$5>")
 		case "text/plain":
 			// use plain body only if html not available
 			if body == "" {
@@ -90,7 +92,7 @@ func get_email_view(file_path string, query string) string {
 	var parts []map[string]string
 	for _, part := range msg.MessagesAll() {
 		partType, disposition, _ := part.Header.ContentDisposition()
-		if partType == "attachment" {
+		if partType == "attachment" || partType == "inline" {
 			fileName := html.UnescapeString(attachment_name_decode(disposition["filename"]))
 			parts = append(parts, map[string]string{
 				"Url":  "/?file=" + url.QueryEscape(fileName) + "&" + query,
@@ -122,7 +124,7 @@ func get_email_attachment(file_path string, attachment_name string) string {
 
 	for _, part := range msg.MessagesAll() {
 		partType, disposition, _ := part.Header.ContentDisposition()
-		if partType == "attachment" {
+		if partType == "attachment" || partType == "inline" {
 			fileName := html.UnescapeString(attachment_name_decode(disposition["filename"]))
 			if fileName == attachment_name {
 				return string(part.Body)
@@ -154,7 +156,7 @@ func view(w http.ResponseWriter, r *http.Request) {
 	} else if len(r.URL.Query()["m"]) == 0 {
 		body = get_email_view(file_path, r.URL.RawQuery)
 	} else {
-		body = get_email_body(file_path)
+		body = get_email_body(file_path, r.URL.Query()["q"][0])
 	}
 	// render body
 	io.WriteString(w, body)
