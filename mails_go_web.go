@@ -174,7 +174,7 @@ func email_file_to_msg(file_path string) *email.Message {
 // this is lazy way to decode attachments,
 // it will break at some emails, I'm sure
 func attachment_name_decode(name string) string {
-	re := regexp.MustCompile("^=\\?[a-zA-Z0-9_\\-]*\\?.\\?(.*)\\?=")
+	re := regexp.MustCompile("=\\?[a-zA-Z0-9_\\-]*\\?.\\?(.*?)\\?=")
 	newName := re.ReplaceAllString(name, "$1")
 	if newName != name {
 		re = regexp.MustCompile("=([A-F0-9][A-F0-9])")
