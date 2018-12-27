@@ -63,9 +63,13 @@ func get_email_body(file_path string, query string) string {
 		case "text/html":
 			// by defaoult use html email
 			html := string(part.Body)
+			idx := strings.Index("<!doctype", body)
+			if idx == -1 || idx > 50 {
+				html = "<!doctype html>\n<base target=\"_parent\">" + html
+			}
 			// open links in parent window
 			body = strings.Replace(html, "<head>", `<head><base target="_parent">`, 1)
-			body = re.ReplaceAllString(body, "<$1$2$3=\"/?q=" + query + "&file=$4\"$5>")
+			body = re.ReplaceAllString(body, "<$1$2$3=\"/?q="+query+"&file=$4\"$5>")
 		case "text/plain":
 			// use plain body only if html not available
 			if body == "" {
