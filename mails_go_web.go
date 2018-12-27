@@ -84,8 +84,7 @@ func get_email_body(file_path string, query string) string {
 func get_email_view(file_path string, query string) string {
 	msg := email_file_to_msg(file_path)
 
-	re := regexp.MustCompile("[^<]*<(.*)>")
-	from := strings.ToLower(re.ReplaceAllString(msg.Header.From(), "$1"))
+	from := strings.ToLower(extract_from_angle_brackets(msg.Header.From()))
 	data := []byte(from)
 	hash := fmt.Sprintf("%x", md5.Sum(data))
 
@@ -129,9 +128,15 @@ func get_email_attachment(file_path string, attachment_name string) string {
 	for _, part := range msg.MessagesAll() {
 		partType, disposition, _ := part.Header.ContentDisposition()
 		if partType == "attachment" || partType == "inline" {
-			fileName := html.UnescapeString(attachment_name_decode(disposition["filename"]))
-			attachmentId := part.Header.Get("X-Attachment-Id")
-			if fileName == attachment_name || attachmentId == attachment_name {
+			// fileName := html.UnescapeString(attachment_name_decode(disposition["filename"]))
+			// attachmentId := part.Header.Get("X-Attachment-Id")
+			// contentId := extract_from_angle_brackets(part.Header.Get("Content-Id"))
+			candidates := []string{
+				html.UnescapeString(attachment_name_decode(disposition["filename"])),
+				part.Header.Get("X-Attachment-Id"),
+				extract_from_angle_brackets(part.Header.Get("Content-Id")),
+			}
+			if contains(candidates, attachment_name) {
 				return string(part.Body)
 			}
 		}
@@ -186,6 +191,20 @@ func attachment_name_decode(name string) string {
 		newName, _ = url.PathUnescape(newName)
 	}
 	return newName
+}
+
+func extract_from_angle_brackets(text string) string {
+	re := regexp.MustCompile("[^<]*<(.*)>")
+	return strings.ToLower(re.ReplaceAllString(text, "$1"))
+}
+
+func contains(arr []string, str string) bool {
+	for _, a := range arr {
+		if strings.ToLower(a) == strings.ToLower(str) {
+			return true
+		}
+	}
+	return false
 }
 
 func main() {
