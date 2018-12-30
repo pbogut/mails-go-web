@@ -15,7 +15,7 @@ import (
 	"strings"
 	"text/template"
 
-	"./preview"
+	"github.com/pbogut/mails-go-web/preview"
 
 	"github.com/jessevdk/go-flags"
 	"github.com/veqryn/go-email/email"
