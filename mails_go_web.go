@@ -17,6 +17,7 @@ import (
 
 	"github.com/pbogut/mails-go-web/preview"
 
+	"github.com/djimenez/iconv-go"
 	"github.com/jessevdk/go-flags"
 	"github.com/veqryn/go-email/email"
 )
@@ -58,11 +59,14 @@ func get_email_body(file_path string, query string) string {
 	msg := email_file_to_msg(file_path)
 	re := regexp.MustCompile("<(img)([^>]*)(src)=\"cid:([^\"]*)\"([^>]*)>")
 	for _, part := range msg.MessagesAll() {
-		mediaType, _, _ := part.Header.ContentType()
+		mediaType, extra, _ := part.Header.ContentType()
 		switch mediaType {
 		case "text/html":
 			// by defaoult use html email
 			html := string(part.Body)
+			if len(extra["charset"]) > 0 {
+				html = convert(html, extra["charset"], "UTF-8")
+			}
 			idx := strings.Index("<!doctype", body)
 			if idx == -1 || idx > 50 {
 				html = "<!doctype html>\n<base target=\"_parent\">" + html
@@ -74,6 +78,9 @@ func get_email_body(file_path string, query string) string {
 			// use plain body only if html not available
 			if body == "" {
 				body = string(part.Body)
+				if len(extra["charset"]) > 0 {
+					body = convert(body, extra["charset"], "UTF-8")
+				}
 			}
 		}
 	}
@@ -96,7 +103,7 @@ func get_email_view(file_path string, query string) string {
 	for _, part := range msg.MessagesAll() {
 		partType, disposition, _ := part.Header.ContentDisposition()
 		if partType == "attachment" || partType == "inline" {
-			fileName := html.UnescapeString(attachment_name_decode(disposition["filename"]))
+			fileName := html.UnescapeString(q_string_decode(disposition["filename"]))
 			parts = append(parts, map[string]string{
 				"Url":  "/?q=" + query + "&file=" + url.QueryEscape(fileName),
 				"Name": fileName,
@@ -107,10 +114,10 @@ func get_email_view(file_path string, query string) string {
 
 	m := map[string]interface{}{
 		"EmailHash": hash,
-		"From":      html.EscapeString(msg.Header.From()),
-		"To":        html.EscapeString(strings.Join(msg.Header.To(), ", ")),
+		"From":      html.EscapeString(q_string_decode(msg.Header.From())),
+		"To":        html.EscapeString(q_string_decode(strings.Join(msg.Header.To(), ", "))),
 		"Date":      date.Format("Mon, 2 Jan [2006-01-02 15:04:05]"),
-		"Subject":   html.EscapeString(msg.Header.Subject()),
+		"Subject":   html.EscapeString(q_string_decode(msg.Header.Subject())),
 		"Query":     query,
 		"Parts":     parts,
 	}
@@ -126,19 +133,14 @@ func get_email_attachment(file_path string, attachment_name string) string {
 	msg := email_file_to_msg(file_path)
 
 	for _, part := range msg.MessagesAll() {
-		partType, disposition, _ := part.Header.ContentDisposition()
-		if partType == "attachment" || partType == "inline" {
-			// fileName := html.UnescapeString(attachment_name_decode(disposition["filename"]))
-			// attachmentId := part.Header.Get("X-Attachment-Id")
-			// contentId := extract_from_angle_brackets(part.Header.Get("Content-Id"))
-			candidates := []string{
-				html.UnescapeString(attachment_name_decode(disposition["filename"])),
-				part.Header.Get("X-Attachment-Id"),
-				extract_from_angle_brackets(part.Header.Get("Content-Id")),
-			}
-			if contains(candidates, attachment_name) {
-				return string(part.Body)
-			}
+		_, disposition, _ := part.Header.ContentDisposition()
+		candidates := []string{
+			html.UnescapeString(q_string_decode(disposition["filename"])),
+			part.Header.Get("X-Attachment-Id"),
+			extract_from_angle_brackets(part.Header.Get("Content-Id")),
+		}
+		if contains(candidates, attachment_name) {
+			return string(part.Body)
 		}
 	}
 
@@ -180,17 +182,23 @@ func email_file_to_msg(file_path string) *email.Message {
 	return msg
 }
 
-// this is lazy way to decode attachments,
-// it will break at some emails, I'm sure
-func attachment_name_decode(name string) string {
-	re := regexp.MustCompile("=\\?[a-zA-Z0-9_\\-]*\\?.\\?(.*?)\\?=")
-	newName := re.ReplaceAllString(name, "$1")
-	if newName != name {
+func q_string_decode(name string) string {
+	re := regexp.MustCompile("=\\?([a-zA-Z0-9_\\-]*?)\\?Q\\?(.*?)\\?=")
+
+	for _, part := range re.FindAllStringSubmatch(name, -1) {
+		full := part[0]
+		charset := part[1]
+		text := part[2]
+
 		re = regexp.MustCompile("=([A-F0-9][A-F0-9])")
-		newName = re.ReplaceAllString(newName, "%$1")
-		newName, _ = url.PathUnescape(newName)
+		newValue := re.ReplaceAllString(text, "%$1")
+		newValue, _ = url.PathUnescape(newValue)
+		newValue = convert(newValue, charset, "UTF-8")
+
+		name = strings.Replace(name, full, newValue, -1)
 	}
-	return newName
+
+	return name
 }
 
 func extract_from_angle_brackets(text string) string {
@@ -205,6 +213,14 @@ func contains(arr []string, str string) bool {
 		}
 	}
 	return false
+}
+
+func convert(text string, src string, dest string) string {
+	result, err := iconv.ConvertString(text, src, dest)
+	if err != nil {
+		return text
+	}
+	return result
 }
 
 func main() {

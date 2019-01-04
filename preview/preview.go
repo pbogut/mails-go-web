@@ -124,12 +124,34 @@ func Body() string {
 	</table>`
 }
 
+func Scripts() string {
+	return `
+	<script>
+		var iframe = document.getElementsByTagName('iframe')[0]
+		document.onkeydown = function(ev) {
+			var x=0, y=0
+			if (ev.key == "ArrowUp") {
+				y = -100
+			} else if (ev.key == "ArrowDown") {
+				y = 100
+			} else if (ev.key == "ArrowLeft") {
+				x = -100
+			} else if (ev.key == "ArrowRight") {
+				x = 100
+			}
+			iframe.contentWindow.scrollBy(x,y)
+		}
+
+	</script>
+	`
+}
+
 func Template() string {
 	return `
 	<!doctype html>
 	<html>
 		<head>` + Css() + `</head>
-		<body>` + Body() + `</body>
+		<body>` + Body() + Scripts() + `</body>
 	</html>
 	`
 }
