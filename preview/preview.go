@@ -78,12 +78,15 @@ func Body() string {
 						<td>
 							{{.From}}
 						</td>
+						<td style="text-align: right">
+							[<a href="/?q={{.Query}}&eml=true" target="_blank">eml</a>]
+						</td>
 					</tr>
 					<tr>
 						<td class="field-name">
 							To:
 						</td>
-						<td>
+						<td colspan="2">
 							{{.To}}
 						</td>
 					</tr>
@@ -91,7 +94,7 @@ func Body() string {
 						<td class="field-name">
 							Date:
 						</td>
-						<td>
+						<td colspan="2">
 							{{.Date}}
 						</td>
 					</tr>
@@ -99,7 +102,7 @@ func Body() string {
 						<td class="field-name bd-b">
 							Subject:
 						</td>
-						<td class="bd-b">
+						<td colspan="2" class="bd-b">
 							{{.Subject}}
 						</td>
 					</tr>

@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"path"
 	"crypto/md5"
 	"fmt"
 	"html"
@@ -161,7 +162,11 @@ func view(w http.ResponseWriter, r *http.Request) {
 
 	var body string
 
-	if len(r.URL.Query()["file"]) > 0 {
+	if len(r.URL.Query()["eml"]) > 0 {
+		w.Header().Add("Content-Disposition", "attachment; filename=\""+path.Base(file_path)+".eml\"")
+		raw_content, _ := ioutil.ReadFile(file_path)
+		body = string(raw_content)
+	} else if len(r.URL.Query()["file"]) > 0 {
 		attachment_name, _ := url.QueryUnescape(r.URL.Query()["file"][0])
 		w.Header().Add("Content-Disposition", "attachment; filename=\""+attachment_name+"\"")
 		body = get_email_attachment(file_path, attachment_name)
