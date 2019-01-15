@@ -67,7 +67,7 @@ func get_email_body(file_path string, query string) string {
 			if len(extra["charset"]) > 0 {
 				html = convert(html, extra["charset"], "UTF-8")
 			}
-			idx := strings.Index("<!doctype", body)
+			idx := strings.Index(body, "<!doctype")
 			if idx == -1 || idx > 50 {
 				html = "<!doctype html>\n<base target=\"_parent\">" + html
 			}
