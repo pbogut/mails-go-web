@@ -58,6 +58,27 @@ func Css() string {
 			height: 100%;
 			width: 100%;
 		}
+		@media (prefers-color-scheme: dark) {
+			body {
+				background-color: #333;
+				color: #eee;
+			}
+			a {
+				color: lightblue;
+			}
+			.header td.bd-r {
+				border-right: 1px solid #eee;
+			}
+			.header td.bd-b {
+				border-bottom: 1px solid #eee;
+			}
+			.container {
+				border: 1px solid #eee;
+			}
+			.attachments {
+				border-top: 1px solid #eee;
+			}
+		}
 	</style>
 	`
 }
