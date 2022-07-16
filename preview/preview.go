@@ -78,6 +78,9 @@ func Css() string {
 			.attachments {
 				border-top: 1px solid #eee;
 			}
+			iframe {
+				background-color: #ccc;
+			}
 		}
 	</style>
 	`
