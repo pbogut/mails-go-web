@@ -27,6 +27,7 @@ var opts struct {
 	Verbose bool   `short:"v" long:"verbose" description:"Show verbose debug information"`
 	Resolv  string `short:"r" long:"query-resolve" description:"Command to resolve a query into file path"`
 	Port    string `short:"p" long:"port" description:"Server port" default:"6245"`
+	Host    string `short:"s" long:"host" description:"Server host" default:"localhost"`
 }
 
 func debug(message string, params ...interface{}) {
@@ -236,6 +237,6 @@ func main() {
 
 	http.HandleFunc("/", view)
 
-	fmt.Println("Starting server on http://localhost:" + opts.Port)
-	http.ListenAndServe("localhost:"+opts.Port, nil)
+	fmt.Println("Starting server on http://" + opts.Host + ":" + opts.Port)
+	http.ListenAndServe(opts.Host + ":"+opts.Port, nil)
 }
