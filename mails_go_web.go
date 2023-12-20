@@ -2,24 +2,22 @@ package main
 
 import (
 	"bytes"
-	"path"
 	"crypto/md5"
 	"fmt"
 	"html"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
 	"os/exec"
+	"path"
 	"regexp"
 	"strings"
 	"text/template"
 
-	"github.com/pbogut/mails-go-web/preview"
-
 	"github.com/djimenez/iconv-go"
 	"github.com/jessevdk/go-flags"
+	"github.com/pbogut/mails-go-web/preview"
 	"github.com/veqryn/go-email/email"
 )
 
@@ -165,7 +163,7 @@ func view(w http.ResponseWriter, r *http.Request) {
 
 	if len(r.URL.Query()["eml"]) > 0 {
 		w.Header().Add("Content-Disposition", "attachment; filename=\""+path.Base(file_path)+".eml\"")
-		raw_content, _ := ioutil.ReadFile(file_path)
+		raw_content, _ := os.ReadFile(file_path)
 		body = string(raw_content)
 	} else if len(r.URL.Query()["file"]) > 0 {
 		attachment_name, _ := url.QueryUnescape(r.URL.Query()["file"][0])
@@ -181,7 +179,7 @@ func view(w http.ResponseWriter, r *http.Request) {
 }
 
 func email_file_to_msg(file_path string) *email.Message {
-	file, _ := ioutil.ReadFile(file_path)
+	file, _ := os.ReadFile(file_path)
 	reader := strings.NewReader(string(file))
 	msg, _ := email.ParseMessage(reader)
 
@@ -238,5 +236,5 @@ func main() {
 	http.HandleFunc("/", view)
 
 	fmt.Println("Starting server on http://" + opts.Host + ":" + opts.Port)
-	http.ListenAndServe(opts.Host + ":"+opts.Port, nil)
+	http.ListenAndServe(opts.Host+":"+opts.Port, nil)
 }
